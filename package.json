@@ -1,0 +1,32 @@
+{
+  "name": "easylandin-digital-marketing",
+  "version": "1.0.0",
+  "description": "Digital Marketing Firm Website with Plasma Background Animation",
+  "main": "index.js",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "framer-motion": "^10.16.4",
+    "ogl": "^1.0.11",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "react-router-dom": "^6.30.1"
+  },
+  "devDependencies": {
+    "@types/react": "^18.2.37",
+    "@types/react-dom": "^18.2.15",
+    "@vitejs/plugin-react": "^4.1.0",
+    "vite": "^4.5.0"
+  },
+  "keywords": [
+    "digital-marketing",
+    "react",
+    "animation",
+    "plasma"
+  ],
+  "author": "EasyLandin Digital Marketing",
+  "license": "MIT"
+}

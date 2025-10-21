@@ -1,0 +1,77 @@
+.nav-menu {
+  display: flex;
+  align-items: center;
+  gap: 2rem;
+}
+
+.nav-menu a {
+  color: rgba(255, 255, 255, 0.8);
+  text-decoration: none;
+  font-weight: 500;
+  font-size: 0.95rem;
+  transition: color 0.3s ease;
+}
+
+.nav-menu a:hover {
+  color: #ffffff;
+}
+
+/* Logo styles */
+.nav-logo {
+  display: flex;
+  align-items: center;
+  line-height: 1.1;
+}
+
+.nav-logo h2 {
+  font-size: 1.25rem;
+  font-weight: 600;
+  font-family: 'Poppins', 'Inter', sans-serif;
+  color: #d8cfff;
+}
+
+.nav-logo span {
+  font-size: 0.9rem;
+  color: rgba(255, 255, 255, 0.7);
+}
+
+/* Dropdown styles for Services */
+.nav-item-dropdown {
+  position: relative;
+}
+
+.dropdown-toggle {
+  cursor: pointer;
+}
+
+.dropdown-menu {
+  position: absolute;
+  top: calc(100% + 10px);
+  right: 0;
+  background: rgba(20, 14, 30, 0.85);
+  border-radius: 12px;
+  padding: 10px 12px;
+  min-width: 260px;
+  display: none;
+  flex-direction: column;
+  gap: 6px;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.5);
+  backdrop-filter: blur(8px);
+}
+
+.dropdown-menu a {
+  color: rgba(255,255,255,0.9);
+  padding: 8px 10px;
+  border-radius: 8px;
+  text-decoration: none;
+  font-size: 0.95rem;
+}
+
+.dropdown-menu a:hover {
+  background: rgba(157, 142, 199, 0.08);
+  color: #fff;
+}
+
+.nav-item-dropdown:hover .dropdown-menu {
+  display: flex;
+}
