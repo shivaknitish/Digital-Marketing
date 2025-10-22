@@ -1,15 +1,15 @@
 import React, { useState, useEffect, lazy, Suspense } from 'react';
 import { motion } from 'framer-motion';
 
-// Lazy load image
-const aboutUsImage = '../../assets/about-us-image.png';
+// Import the about us image from assets folder
+const aboutUsImage = '/assets/about-us-image.png';
 
 // Image component with lazy loading
 const LazyImage = ({ src, alt, className }) => {
   const [isLoaded, setIsLoaded] = useState(false);
   
   return (
-    <div className={className} style={{ position: 'relative' }}>
+    <div className={className} style={{ position: 'relative', width: '100%' }}>
       {!isLoaded && (
         <div style={{ 
           position: 'absolute', 
@@ -20,7 +20,8 @@ const LazyImage = ({ src, alt, className }) => {
           backgroundColor: 'rgba(255,255,255,0.1)', 
           display: 'flex', 
           justifyContent: 'center', 
-          alignItems: 'center' 
+          alignItems: 'center',
+          minHeight: '300px'
         }}>
           <div style={{ 
             width: '30px', 
@@ -37,7 +38,14 @@ const LazyImage = ({ src, alt, className }) => {
         alt={alt} 
         loading="lazy" 
         onLoad={() => setIsLoaded(true)} 
-        style={{ opacity: isLoaded ? 1 : 0, transition: 'opacity 0.3s' }} 
+        style={{ 
+          opacity: isLoaded ? 1 : 0, 
+          transition: 'opacity 0.3s',
+          width: '100%',
+          maxWidth: '100%',
+          height: 'auto',
+          display: 'block'
+        }} 
       />
     </div>
   );

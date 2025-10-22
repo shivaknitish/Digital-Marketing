@@ -361,6 +361,7 @@ section {
   gap: 3rem;
   max-width: 1100px;
   margin: 0 auto;
+  padding: 0 20px; /* Add horizontal padding */
 }
 
 @media (max-width: 768px) {
@@ -417,13 +418,22 @@ section {
   display: flex;
   justify-content: center;
   align-items: center;
+  width: 100%;
+}
+
+.about-img-container {
+  width: 100%;
+  max-width: 100%;
+  display: block;
 }
 
 .about-image img {
+  width: 100%;
   max-width: 100%;
   height: auto;
   border-radius: 20px;
   box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+  display: block;
 }
 
 .stats-section {
@@ -753,12 +763,20 @@ section {
     grid-template-columns: 1fr;
     text-align: center;
     gap: 2rem;
+    padding: 0 1.5rem; /* Add more padding on mobile */
   }
   
   .about-image {
     order: -1;
     margin: 0 auto;
-    max-width: 80%;
+    max-width: 100%;
+    width: 100%;
+    display: flex;
+  }
+
+  .about-img-container {
+    width: 100%;
+    max-width: 100%;
   }
   
   .stats {
@@ -825,11 +843,24 @@ section {
     font-size: 0.9rem;
   }
   
+  .about-content {
+    padding: 0 1.25rem; /* Ensure padding on smaller mobile */
+  }
+  
   .about-image {
     max-width: 100%;
+    width: 100%;
+  }
+
+  .about-img-container {
+    width: 100%;
   }
   
   .testimonial-card {
-    padding: 1.25rem;
+    padding: 0.75rem; /* Reduce outer padding */
+  }
+  
+  .card-content {
+    padding: 1.5rem 1.25rem; /* Ensure content has proper padding */
   }
 }
