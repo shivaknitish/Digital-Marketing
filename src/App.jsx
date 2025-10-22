@@ -124,8 +124,8 @@ const App = memo(() => {
       </Suspense>
       
       {/* Navigation */}
-      <nav className="navbar">
-        <div className={`nav-container ${isScrolled ? 'glass' : ''}`}>
+      <nav className={`navbar ${isScrolled ? 'glass' : ''}`}>
+        <div className="nav-container">
           <div className="nav-logo">
               <h2>EasyLandIn</h2>
           </div>

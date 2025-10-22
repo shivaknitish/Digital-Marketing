@@ -80,8 +80,17 @@ body {
   top: 0;
   left: 0;
   right: 0;
-  z-index: 100;
-  padding: 1rem;
+  z-index: 5001;
+  padding: 1rem; /* This padding creates space for the container inside */
+  transition: background 0.3s ease, backdrop-filter 0.3s ease, box-shadow 0.3s ease;
+}
+
+/* The glass effect is now on the parent navbar */
+.navbar.glass {
+  background: rgba(157, 142, 199, 0.08);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  box-shadow: 0 6px 24px rgba(10, 8, 12, 0.3);
 }
 
 .nav-container {
@@ -92,16 +101,8 @@ body {
   justify-content: space-between;
   align-items: center;
   border-radius: 50px;
-  border: none !important;
-}
-
-/* The glass class is now added based on scroll, not part of the base HTML */
-.nav-container.glass {
-  background: rgba(157, 142, 199, 0.08);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
-  box-shadow: 0 6px 24px rgba(10, 8, 12, 0.3);
-  border: none !important; /* Explicitly remove any border with !important */
+  position: relative; /* Establish a stacking context */
+  /* The background is removed from here */
 }
 
 .nav-logo h2 {
@@ -149,44 +150,7 @@ body {
   width: 100%;
 }
 
-/* Hamburger Menu for Mobile */
-.nav-hamburger {
-  display: none; /* Hidden on desktop */
-  cursor: pointer;
-  z-index: 1001;
-}
-
-.nav-hamburger div {
-  width: 25px;
-  height: 3px;
-  background-color: white;
-  margin: 5px 0;
-  transition: all 0.3s ease;
-}
-
-/* Show hamburger on mobile */
-@media (max-width: 768px) {
-  .nav-hamburger {
-    display: flex;
-    flex-direction: column;
-    justify-content: space-between;
-    height: 24px;
-  }
-}
-
-/* Animate hamburger to 'X' */
-.nav-hamburger.open div:nth-child(1) {
-  transform: translateY(8px) rotate(45deg);
-}
-
-.nav-hamburger.open div:nth-child(2) {
-  opacity: 0;
-  transform: translateX(-20px);
-}
-
-.nav-hamburger.open div:nth-child(3) {
-  transform: translateY(-8px) rotate(-45deg);
-}
+/* Hamburger styles are in Navbar.css */
 
 
 /* Mobile Menu Overlay */
@@ -205,7 +169,7 @@ body {
   gap: 2rem;
   transform: translateX(-100%);
   transition: transform 0.3s ease-in-out;
-  z-index: 1000;
+  z-index: 4999;
 }
 
 .mobile-nav-menu.open {
