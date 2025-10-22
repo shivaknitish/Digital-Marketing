@@ -1,20 +1,43 @@
-import React, { useEffect, memo, useState, useRef } from 'react';
+import React, { useEffect, memo, useState, useRef, lazy, Suspense } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Routes, Route, Link } from 'react-router-dom';
-import Plasma from './components/Plasma';
-import ContactPage from './components/ContactPage';
-import HomePage from './components/HomePage';
-import AboutPage from './components/AboutPage';
-import ServicesPage, { ServicesPageWithScroll } from './components/ServicesPage';
 import './App.css';
 import './components/Navbar.css';
+
+// Lazy load components
+const Plasma = lazy(() => import('../Plasma'));
+const HomePage = lazy(() => import('./components/HomePage'));
+const AboutPage = lazy(() => import('./components/AboutPage'));
+const ContactPage = lazy(() => import('./components/ContactPage'));
+// Lazy load ServicesPage
+const ServicesPage = lazy(() => import('./components/ServicesPage'));
+
+// Loading spinner component
+const LoadingSpinner = () => (
+  <div style={{ 
+    display: 'flex', 
+    justifyContent: 'center', 
+    alignItems: 'center', 
+    height: '100vh' 
+  }}>
+    <div style={{ 
+      width: '50px', 
+      height: '50px', 
+      border: '5px solid rgba(255, 255, 255, 0.1)', 
+      borderTopColor: '#667eea', 
+      borderRadius: '50%', 
+      animation: 'spin 1s linear infinite' 
+    }} />
+  </div>
+);
 /* ContactForm styles are imported by the ContactForm component so they only load on the Contact page */
 
 const App = memo(() => {
   const location = useLocation();
   const navigate = useNavigate();
-  const [isNavVisible, setIsNavVisible] = useState(true);
+  const [isScrolled, setIsScrolled] = useState(false);
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
 
   useEffect(() => {
     // Disable smooth scroll initially
@@ -52,8 +75,8 @@ const App = memo(() => {
 
   useEffect(() => {
     const handleScroll = () => {
-      const yPos = window.scrollY;
-      setIsNavVisible(yPos < 50);
+      // Set scrolled state if user scrolls down more than 50px
+      setIsScrolled(window.scrollY > 50);
     };
 
     window.addEventListener('scroll', handleScroll, false);
@@ -63,54 +86,90 @@ const App = memo(() => {
     };
   }, []);
 
+  const toggleMenu = () => {
+    setIsMenuOpen(!isMenuOpen);
+    
+    // Prevent scrolling when menu is open
+    if (!isMenuOpen) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = 'auto';
+    }
+  };
+  
+  // Close menu when route changes and scroll to top
+  useEffect(() => {
+    setIsMenuOpen(false);
+    document.body.style.overflow = 'auto';
+    // Use smooth scrolling behavior when navigating between pages
+    window.scrollTo({
+      top: 0,
+      left: 0,
+      behavior: 'smooth'
+    });
+  }, [location.pathname]);
+
   return (
     <div className="app">
-      <React.Suspense fallback={null}>
-        <Plasma color="#9D8EC7" />
-      </React.Suspense>
+      {/* Lazy load Plasma background with error boundary */}
+      <Suspense fallback={null}>
+        <Plasma 
+          color="#9D8EC7" 
+          speed={0.6} 
+          direction="forward" 
+          scale={1.1} 
+          opacity={0.8} 
+          mouseInteractive={true} 
+        />
+      </Suspense>
       
       {/* Navigation */}
-      <AnimatePresence>
-        {isNavVisible && (
-          <motion.nav 
-            className="navbar"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.3, ease: 'easeInOut' }}
-          >
-            <div className="nav-container glass">
-              <div className="nav-logo">
-                  <h2>EasyLandIn</h2>
-              </div>
-              <div className="nav-menu">
-                <Link to="/">Home</Link>
-                <Link to="/about">About</Link>
-                <div className="nav-item-dropdown">
-                  <Link to="/services" className="dropdown-toggle">Services</Link>
-                  <div className="dropdown-menu">
-                    <a href="/services#search-engine-optimization">Search Engine Optimization</a>
-                    <a href="/services#social-media-marketing">Social Media Marketing</a>
-                    <a href="/services#online-advertising">Online Advertising</a>
-                    <a href="/services#content-marketing">Content Marketing</a>
-                    <a href="/services#marketing-strategy-analytics">Marketing Strategy & Analytics</a>
-                    <a href="/services#web-app-design-development">Web Design & Development</a>
-                  </div>
-                </div>
-                <Link to="/contact">Contact</Link>
-              </div>
-            </div>
-          </motion.nav>
-        )}
-      </AnimatePresence>
+      <nav className="navbar">
+        <div className={`nav-container ${isScrolled ? 'glass' : ''}`}>
+          <div className="nav-logo">
+              <h2>EasyLandIn</h2>
+          </div>
+          {/* Desktop Menu */}
+          <div className="nav-menu">
+            <Link to="/">Home</Link>
+            <Link to="/about">About</Link>
+            <Link to="/services">Services</Link>
+            <Link to="/contact">Contact</Link>
+          </div>
 
-      {/* Routes will render pages. HomePage contains the hero, services and about sections */}
-      <Routes>
-        <Route path="/" element={<HomePage />} />
-  <Route path="/about" element={<AboutPage />} />
-  <Route path="/services" element={<ServicesPageWithScroll />} />
-  <Route path="/contact" element={<ContactPage />} />
-      </Routes>
+          {/* Hamburger Icon */}
+          <div 
+            className={`nav-hamburger ${isMenuOpen ? 'open' : ''}`} 
+            onClick={toggleMenu}
+            aria-label="Toggle menu"
+            role="button"
+            tabIndex={0}
+            onKeyPress={(e) => e.key === 'Enter' && toggleMenu()}
+          >
+            <div />
+            <div />
+            <div />
+          </div>
+        </div>
+      </nav>
+
+      {/* Mobile Menu Overlay */}
+      <div className={`mobile-nav-menu ${isMenuOpen ? 'open' : ''}`}>
+        <Link to="/" onClick={toggleMenu}>Home</Link>
+        <Link to="/about" onClick={toggleMenu}>About</Link>
+        <Link to="/services" onClick={toggleMenu}>Services</Link>
+        <Link to="/contact" onClick={toggleMenu}>Contact</Link>
+      </div>
+
+      {/* Routes with lazy loading */}
+      <Suspense fallback={<LoadingSpinner />}>
+        <Routes>
+          <Route path="/" element={<HomePage />} />
+          <Route path="/about" element={<AboutPage />} />
+          <Route path="/services" element={<ServicesPage />} />
+          <Route path="/contact" element={<ContactPage />} />
+        </Routes>
+      </Suspense>
 
       
 
@@ -127,8 +186,8 @@ const App = memo(() => {
                 <h4>Quick Links</h4>
                 <div className="footer-links">
                   <Link to="/">Home</Link>
-                  <Link to="/services">Services</Link>
                   <Link to="/about">About</Link>
+                  <Link to="/services">Services</Link>
                   <Link to="/contact">Contact</Link>
                 </div>
               </div>

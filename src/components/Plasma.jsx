@@ -32,19 +32,22 @@ void mainImage(out vec4 o, vec2 C) {
   vec2 center = iResolution.xy * 0.5;
   C = (C - center) / uScale + center;
   
-  vec2 mouseOffset = (uMouse - center) * 0.0002;
+  // Reduce mouse influence for better performance
+  vec2 mouseOffset = (uMouse - center) * 0.0001;
   C += mouseOffset * length(C - center) * step(0.5, uMouseInteractive);
   
   float i, d, z, T = iTime * uSpeed * uDirection;
   vec3 O, p, S;
 
-  for (vec2 r = iResolution.xy, Q; ++i < 60.; O += o.w/d*o.xyz) {
+  // Reduce iteration count for better performance
+  for (vec2 r = iResolution.xy, Q; ++i < 40.; O += o.w/d*o.xyz) {
     p = z*normalize(vec3(C-.5*r,r.y)); 
     p.z -= 4.; 
     S = p;
     d = p.y-T;
     
-    p.x += .4*(1.+p.y)*sin(d + p.x*0.1)*cos(.34*d + p.x*0.05); 
+    // Simplified calculation for better performance
+    p.x += .3*(1.+p.y)*sin(d + p.x*0.1); 
     Q = p.xz *= mat2(cos(p.y+vec4(0,11,33,0)-T)); 
     z+= d = abs(sqrt(length(Q*Q)) - .25*(5.+S.y))/3.+8e-4; 
     o = 1.+sin(S.y+p.z*.5+S.z-length(S-p)+vec4(2,1,0,8));
@@ -76,16 +79,44 @@ void main() {
 }
 `;
 
+// Helper function to detect device performance
+const detectDevicePerformance = () => {
+  // Check if running on mobile
+  const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+  
+  // Check for low-end devices based on available memory (if supported)
+  let isLowEndDevice = false;
+  if (navigator.deviceMemory) {
+    isLowEndDevice = navigator.deviceMemory < 4; // Less than 4GB RAM
+  }
+  
+  // Check CPU cores if available
+  let hasLimitedCPU = false;
+  if (navigator.hardwareConcurrency) {
+    hasLimitedCPU = navigator.hardwareConcurrency <= 4; // 4 or fewer cores
+  }
+  
+  // Determine performance level
+  if (isMobile || isLowEndDevice || hasLimitedCPU) {
+    return 'low';
+  } else {
+    return 'high';
+  }
+};
+
 export const Plasma = ({
   color = '#ffffff',
   speed = 1,
   direction = 'forward',
   scale = 1,
   opacity = 1,
-  mouseInteractive = true
+  mouseInteractive = true,
+  // Allow quality override via props, but default to auto-detection
+  quality = 'auto'
 }) => {
   const containerRef = useRef(null);
   const mousePos = useRef({ x: 0, y: 0 });
+  const performanceLevel = useRef(quality === 'auto' ? detectDevicePerformance() : quality);
 
   useEffect(() => {
     if (!containerRef.current) return;
@@ -94,12 +125,20 @@ export const Plasma = ({
     const customColorRgb = color ? hexToRgb(color) : [1, 1, 1];
 
     const directionMultiplier = direction === 'reverse' ? -1.0 : 1.0;
+    
+    // Adjust quality based on performance level
+    const isLowPerformance = performanceLevel.current === 'low';
+    
+    // Lower device pixel ratio for low-end devices
+    const devicePixelRatio = isLowPerformance ? 
+      Math.min(window.devicePixelRatio || 1, 1) : // Cap at 1 for low performance
+      Math.min(window.devicePixelRatio || 1, 2);  // Cap at 2 for high performance
 
     const renderer = new Renderer({
       webgl: 2,
       alpha: true,
       antialias: false,
-      dpr: Math.min(window.devicePixelRatio || 1, 2)
+      dpr: devicePixelRatio
     });
     const gl = renderer.gl;
     const canvas = gl.canvas;
@@ -110,27 +149,58 @@ export const Plasma = ({
 
     const geometry = new Triangle(gl);
 
+    // Modify fragment shader based on performance level
+    let optimizedFragment = fragment;
+    if (isLowPerformance) {
+      // Replace the iteration count with a lower value for low-performance devices
+      optimizedFragment = fragment.replace('++i < 40.', '++i < 25.');
+    }
+    
     const program = new Program(gl, {
       vertex: vertex,
-      fragment: fragment,
+      fragment: optimizedFragment,
       uniforms: {
         iTime: { value: 0 },
         iResolution: { value: new Float32Array([1, 1]) },
         uCustomColor: { value: new Float32Array(customColorRgb) },
         uUseCustomColor: { value: useCustomColor },
-        uSpeed: { value: speed * 0.4 },
+        uSpeed: { value: speed * (isLowPerformance ? 0.3 : 0.4) }, // Slower animation for low-end devices
         uDirection: { value: directionMultiplier },
         uScale: { value: scale },
         uOpacity: { value: opacity },
         uMouse: { value: new Float32Array([0, 0]) },
-        uMouseInteractive: { value: mouseInteractive ? 1.0 : 0.0 }
+        uMouseInteractive: { value: (mouseInteractive && !isLowPerformance) ? 1.0 : 0.0 } // Disable mouse interaction on low-end devices
       }
     });
 
     const mesh = new Mesh(gl, { geometry, program });
 
-    const handleMouseMove = e => {
-      if (!mouseInteractive) return;
+    // Throttle function to limit the rate at which a function can fire
+    const throttle = (func, limit) => {
+      let inThrottle;
+      let lastFunc;
+      let lastRan;
+      return function() {
+        const context = this;
+        const args = arguments;
+        if (!inThrottle) {
+          func.apply(context, args);
+          lastRan = Date.now();
+          inThrottle = true;
+        } else {
+          clearTimeout(lastFunc);
+          lastFunc = setTimeout(function() {
+            if (Date.now() - lastRan >= limit) {
+              func.apply(context, args);
+              lastRan = Date.now();
+            }
+          }, limit - (Date.now() - lastRan));
+        }
+      };
+    };
+
+    const updateMousePosition = e => {
+      if (!mouseInteractive || !containerRef.current) return;
       const rect = containerRef.current.getBoundingClientRect();
       mousePos.current.x = e.clientX - rect.left;
       mousePos.current.y = e.clientY - rect.top;
@@ -139,27 +209,76 @@ export const Plasma = ({
       mouseUniform[1] = mousePos.current.y;
     };
 
-    if (mouseInteractive) {
-      containerRef.current.addEventListener('mousemove', handleMouseMove);
+    // Throttle mouse move to 30ms (about 33fps) for better performance
+    const handleMouseMove = throttle(updateMousePosition, 30);
+
+    if (mouseInteractive && containerRef.current) {
+      containerRef.current.addEventListener('mousemove', handleMouseMove, { passive: true });
     }
 
-    const setSize = () => {
-      const rect = containerRef.current.getBoundingClientRect();
-      const width = Math.max(1, Math.floor(rect.width));
-      const height = Math.max(1, Math.floor(rect.height));
-      renderer.setSize(width, height);
-      const res = program.uniforms.iResolution.value;
-      res[0] = gl.drawingBufferWidth;
-      res[1] = gl.drawingBufferHeight;
+    // Throttle resize events for better performance
+    let resizeTimeout;
+    const throttledSetSize = () => {
+      if (resizeTimeout) return;
+      
+      resizeTimeout = setTimeout(() => {
+        if (!containerRef.current) return;
+        
+        const rect = containerRef.current.getBoundingClientRect();
+        // Round to nearest 10px for low performance mode to reduce resize calculations
+        const roundFactor = isLowPerformance ? 10 : 1;
+        const width = Math.max(1, Math.floor(rect.width / roundFactor) * roundFactor);
+        const height = Math.max(1, Math.floor(rect.height / roundFactor) * roundFactor);
+        
+        renderer.setSize(width, height);
+        const res = program.uniforms.iResolution.value;
+        res[0] = gl.drawingBufferWidth;
+        res[1] = gl.drawingBufferHeight;
+        
+        resizeTimeout = null;
+      }, isLowPerformance ? 250 : 100); // Longer delay for low-end devices
     };
 
-    const ro = new ResizeObserver(setSize);
+    const ro = new ResizeObserver(throttledSetSize);
     ro.observe(containerRef.current);
-    setSize();
+    throttledSetSize();
 
     let raf = 0;
     const t0 = performance.now();
+    let lastRenderTime = 0;
+    const targetFPS = 30; // Lower FPS for better performance
+    const frameInterval = 1000 / targetFPS;
+    
+    // Use scroll position to determine if animation should run at full speed
+    let isScrolling = false;
+    let scrollTimeout = null;
+    
+    const handleScroll = () => {
+      isScrolling = true;
+      
+      // Clear the timeout if it's set
+      if (scrollTimeout) {
+        clearTimeout(scrollTimeout);
+      }
+      
+      // Set a timeout to stop scrolling after 100ms of no scroll events
+      scrollTimeout = setTimeout(() => {
+        isScrolling = false;
+      }, 100);
+    };
+    
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    
     const loop = t => {
+      raf = requestAnimationFrame(loop);
+      
+      // Throttle rendering when not scrolling
+      const delta = t - lastRenderTime;
+      if (!isScrolling && delta < frameInterval) {
+        return;
+      }
+      
+      lastRenderTime = t;
       let timeValue = (t - t0) * 0.001;
 
       if (direction === 'pingpong') {
@@ -169,15 +288,24 @@ export const Plasma = ({
 
       program.uniforms.iTime.value = timeValue;
       renderer.render({ scene: mesh });
-      raf = requestAnimationFrame(loop);
     };
     raf = requestAnimationFrame(loop);
 
     return () => {
       cancelAnimationFrame(raf);
       ro.disconnect();
+      window.removeEventListener('scroll', handleScroll, { passive: true });
+      
+      // Clear all timeouts
+      if (scrollTimeout) {
+        clearTimeout(scrollTimeout);
+      }
+      if (resizeTimeout) {
+        clearTimeout(resizeTimeout);
+      }
+      
       if (mouseInteractive && containerRef.current) {
-        containerRef.current.removeEventListener('mousemove', handleMouseMove);
+        containerRef.current.removeEventListener('mousemove', handleMouseMove, { passive: true });
       }
       try {
         // eslint-disable-next-line react-hooks/exhaustive-deps

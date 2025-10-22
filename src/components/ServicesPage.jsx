@@ -4,6 +4,20 @@ import { useLocation } from 'react-router-dom';
 
 const ServicesPage = () => {
   const location = useLocation();
+  
+  // Add scroll to hash functionality directly in the main component
+  useEffect(() => {
+    if (location && location.hash) {
+      const id = location.hash.replace('#', '');
+      const el = document.getElementById(id);
+      if (el) {
+        // small timeout to allow layout to settle
+        setTimeout(() => {
+          el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }, 50);
+      }
+    }
+  }, [location]);
   const services = [
     {
       title: "Search Engine Optimization",

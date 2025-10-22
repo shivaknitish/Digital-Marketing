@@ -1,6 +1,47 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, lazy, Suspense } from 'react';
 import { motion } from 'framer-motion';
-import aboutUsImage from '../../assets/about-us-image.png';
+
+// Lazy load image
+const aboutUsImage = '../../assets/about-us-image.png';
+
+// Image component with lazy loading
+const LazyImage = ({ src, alt, className }) => {
+  const [isLoaded, setIsLoaded] = useState(false);
+  
+  return (
+    <div className={className} style={{ position: 'relative' }}>
+      {!isLoaded && (
+        <div style={{ 
+          position: 'absolute', 
+          top: 0, 
+          left: 0, 
+          right: 0, 
+          bottom: 0, 
+          backgroundColor: 'rgba(255,255,255,0.1)', 
+          display: 'flex', 
+          justifyContent: 'center', 
+          alignItems: 'center' 
+        }}>
+          <div style={{ 
+            width: '30px', 
+            height: '30px', 
+            border: '3px solid rgba(255, 255, 255, 0.1)', 
+            borderTopColor: '#667eea', 
+            borderRadius: '50%', 
+            animation: 'spin 1s linear infinite' 
+          }} />
+        </div>
+      )}
+      <img 
+        src={src} 
+        alt={alt} 
+        loading="lazy" 
+        onLoad={() => setIsLoaded(true)} 
+        style={{ opacity: isLoaded ? 1 : 0, transition: 'opacity 0.3s' }} 
+      />
+    </div>
+  );
+};
 
 const testimonials = [
   {
@@ -56,7 +97,7 @@ const TestimonialCarousel = () => {
               <div className="card-content">
                 <div className="profile-section">
                   <div className="profile-image">
-                    <img src={card.image} alt={card.name} />
+                    <LazyImage src={card.image} alt={card.name} className="profile-img" />
                   </div>
                   <div className="profile-info">
                     <div className="profile-name">{card.name}</div>
@@ -109,10 +150,10 @@ const AboutPage = () => {
             className="about-image"
             initial={{ opacity: 0, x: 50 }}
             whileInView={{ opacity: 1, x: 0 }}
-            transition={{ duration: 0.6, delay: 0.2, ease: "easeOut" }}
+            transition={{ duration: 0.6, ease: "easeOut", delay: 0.2 }}
             viewport={{ once: true }}
           >
-            <img src={aboutUsImage} alt="Digital Marketing" />
+            <LazyImage src={aboutUsImage} alt="About EasyLandin" className="about-img-container" />
           </motion.div>
         </div>
       </section>
