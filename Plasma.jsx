@@ -99,11 +99,15 @@ export const Plasma = ({
 
     const directionMultiplier = direction === 'reverse' ? -1.0 : 1.0;
 
+    // Reduce quality on mobile devices for better performance
+    const isMobile = window.innerWidth <= 768;
+    const dpr = isMobile ? 1 : Math.min(window.devicePixelRatio || 1, 2);
+
     const renderer = new Renderer({
       webgl: 2,
       alpha: true,
       antialias: false,
-      dpr: Math.min(window.devicePixelRatio || 1, 2)
+      dpr: dpr
     });
     const gl = renderer.gl;
     const canvas = gl.canvas;
@@ -133,8 +137,15 @@ export const Plasma = ({
 
     const mesh = new Mesh(gl, { geometry, program });
 
+    let lastMouseUpdate = 0;
+    const throttleInterval = 16; // ~60fps
+
     const handleMouseMove = e => {
       if (!mouseInteractive) return;
+      const now = performance.now();
+      if (now - lastMouseUpdate < throttleInterval) return;
+      lastMouseUpdate = now;
+      
       const rect = containerRef.current.getBoundingClientRect();
       mousePos.current.x = e.clientX - rect.left;
       mousePos.current.y = e.clientY - rect.top;

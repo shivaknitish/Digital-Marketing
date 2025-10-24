@@ -1,15 +1,41 @@
-import React, { useState, useEffect, lazy, Suspense } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { motion } from 'framer-motion';
 
 // Import the about us image from assets folder
-const aboutUsImage = '/assets/about-us-image.png';
+const aboutUsImage = new URL('../../assets/about-us-image.png', import.meta.url).href;
 
 // Image component with lazy loading
 const LazyImage = ({ src, alt, className }) => {
   const [isLoaded, setIsLoaded] = useState(false);
+  const [imageSrc, setImageSrc] = useState(null);
+  const imgRef = useRef(null);
+  
+  useEffect(() => {
+    // Use Intersection Observer for better performance
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting && !imageSrc) {
+            setImageSrc(src);
+          }
+        });
+      },
+      { rootMargin: '100px' }
+    );
+
+    if (imgRef.current) {
+      observer.observe(imgRef.current);
+    }
+
+    return () => {
+      if (imgRef.current) {
+        observer.unobserve(imgRef.current);
+      }
+    };
+  }, [src, imageSrc]);
   
   return (
-    <div className={className} style={{ position: 'relative', width: '100%' }}>
+    <div ref={imgRef} className={className} style={{ position: 'relative', width: '100%' }}>
       {!isLoaded && (
         <div style={{ 
           position: 'absolute', 
@@ -17,11 +43,12 @@ const LazyImage = ({ src, alt, className }) => {
           left: 0, 
           right: 0, 
           bottom: 0, 
-          backgroundColor: 'rgba(255,255,255,0.1)', 
+          backgroundColor: 'rgba(255,255,255,0.05)', 
           display: 'flex', 
           justifyContent: 'center', 
           alignItems: 'center',
-          minHeight: '300px'
+          minHeight: '300px',
+          borderRadius: '20px'
         }}>
           <div style={{ 
             width: '30px', 
@@ -33,20 +60,23 @@ const LazyImage = ({ src, alt, className }) => {
           }} />
         </div>
       )}
-      <img 
-        src={src} 
-        alt={alt} 
-        loading="lazy" 
-        onLoad={() => setIsLoaded(true)} 
-        style={{ 
-          opacity: isLoaded ? 1 : 0, 
-          transition: 'opacity 0.3s',
-          width: '100%',
-          maxWidth: '100%',
-          height: 'auto',
-          display: 'block'
-        }} 
-      />
+      {imageSrc && (
+        <img 
+          src={imageSrc} 
+          alt={alt} 
+          loading="lazy" 
+          decoding="async"
+          onLoad={() => setIsLoaded(true)} 
+          style={{ 
+            opacity: isLoaded ? 1 : 0, 
+            transition: 'opacity 0.5s ease-in-out',
+            width: '100%',
+            maxWidth: '100%',
+            height: 'auto',
+            display: 'block'
+          }} 
+        />
+      )}
     </div>
   );
 };
